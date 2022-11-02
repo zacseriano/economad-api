@@ -1,4 +1,4 @@
-package zacseriano.economadapi.service;
+package zacseriano.economadapi.service.competencia;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
