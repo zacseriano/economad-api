@@ -1,8 +1,12 @@
 package zacseriano.economadapi.domain.model;
 
+import java.util.List;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.OneToMany;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,4 +23,6 @@ public class Pagador extends BaseModel {
 	private String nome;
 	@Enumerated(EnumType.STRING)
 	private TipoPagamentoEnum tipoPagamentoEnum;
+	@OneToMany(mappedBy = "pagador", cascade = CascadeType.ALL)
+	private List<Despesa> despesas;
 }

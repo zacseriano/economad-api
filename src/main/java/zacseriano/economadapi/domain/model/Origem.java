@@ -1,6 +1,10 @@
 package zacseriano.economadapi.domain.model;
 
+import java.util.List;
+
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.OneToMany;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,5 +19,7 @@ import lombok.NoArgsConstructor;
 public class Origem extends BaseModel {
 	private String nome;
 	private String cidade;
-	private String estado;	
+	private String estado;
+	@OneToMany(mappedBy = "origem", cascade = CascadeType.ALL)
+	private List<Despesa> despesas;
 }
