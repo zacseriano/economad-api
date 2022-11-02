@@ -3,6 +3,7 @@ package zacseriano.economadapi.domain.model;
 import java.util.List;
 
 import javax.persistence.CascadeType;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.OneToMany;
 
@@ -17,6 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class Origem extends BaseModel {
+	@Column(unique = true)
 	private String nome;
 	private String cidade;
 	private String estado;
