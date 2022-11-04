@@ -1,5 +1,7 @@
 package zacseriano.economadapi.service.competencia;
 
+import javax.validation.ValidationException;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +21,22 @@ public class CompetenciaService {
 	@Autowired
 	private CompetenciaMapper mapper;
 	
-	public Competencia carregarOuCriarCompetencia(CompetenciaForm form) {
+	public Competencia carregarOuCriar(CompetenciaForm form) {
 		Competencia competencia = repository.findByMesEnumAndAno(form.getMesEnum(), form.getAno());
 		if (competencia == null) {
 			competencia = mapper.toModel(form);
 			competencia.setDescricao(competencia.getMesEnum().toString() + "/" + competencia.getAno());
 			competencia = repository.save(competencia);
+		}
+		
+		return competencia;
+	}
+
+	public Competencia visualizarPorDescricao(String descricaoCompetencia) {
+		Competencia competencia = repository.findByDescricao(descricaoCompetencia);
+		
+		if (competencia == null) {
+			throw new ValidationException(String.format("Competencia com descrição %s não encontrada.", descricaoCompetencia));		
 		}
 		
 		return competencia;

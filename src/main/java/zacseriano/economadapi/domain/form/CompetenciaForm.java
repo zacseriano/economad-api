@@ -1,5 +1,8 @@
 package zacseriano.economadapi.domain.form;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,6 +12,7 @@ import zacseriano.economadapi.domain.enums.MesEnum;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CompetenciaForm {
+	@Enumerated(EnumType.STRING)
 	private MesEnum mesEnum;
 	private int ano;
 }

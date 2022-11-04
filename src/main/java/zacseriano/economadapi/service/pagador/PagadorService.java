@@ -1,6 +1,7 @@
 package zacseriano.economadapi.service.pagador;
 
 import javax.transaction.Transactional;
+import javax.validation.ValidationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,16 @@ public class PagadorService {
 		
 		if (pagador == null) {
 			pagador = criar(form);		
+		}
+		
+		return pagador;
+	}
+
+	public Pagador visualizarPorNome(String nomePagador) {
+		Pagador pagador = pagadorRepository.findByNome(nomePagador);
+		
+		if (pagador == null) {
+			throw new ValidationException(String.format("Pagador de nome %s não encontrado.", nomePagador));		
 		}
 		
 		return pagador;

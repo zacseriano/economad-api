@@ -5,6 +5,8 @@ import java.time.LocalDate;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.ManyToOne;
 
 import lombok.AllArgsConstructor;
@@ -23,6 +25,7 @@ public class Despesa extends BaseModel {
 	private BigDecimal valor;
 	private LocalDate data;	
 	private LocalDate prazo;
+	@Enumerated(EnumType.STRING)
 	private StatusDespesaEnum statusDespesaEnum;
 	@ManyToOne(cascade = CascadeType.ALL)
 	private Origem origem;

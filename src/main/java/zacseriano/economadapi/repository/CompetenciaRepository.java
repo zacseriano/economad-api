@@ -9,4 +9,5 @@ import zacseriano.economadapi.domain.model.Competencia;
 
 public interface CompetenciaRepository extends JpaRepository<Competencia, UUID>{
 	Competencia findByMesEnumAndAno(MesEnum mesEnum, int ano);
+	Competencia findByDescricao(String descricao);
 }
