@@ -6,6 +6,9 @@ import java.util.List;
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ import zacseriano.economadapi.repository.DespesaRepository;
 import zacseriano.economadapi.service.competencia.CompetenciaService;
 import zacseriano.economadapi.service.origem.OrigemService;
 import zacseriano.economadapi.service.pagador.PagadorService;
+import zacseriano.economadapi.specification.DespesaSpecificationBuilder;
 
 @Service
 @Transactional
@@ -34,6 +38,13 @@ public class DespesaService {
 	private OrigemService origemService;
 	@Autowired
 	private PagadorService pagadorService;
+	
+	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador,
+			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao) {
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
+				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem);
+		return despesaRepository.findAll(spec, paginacao);
+	}
 	
 	public List<Despesa> visualizar(String nomePagador, String descricaoCompetencia){
 		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
@@ -69,4 +80,6 @@ public class DespesaService {
 		
 		return total;
 	}
+
+	
 }
