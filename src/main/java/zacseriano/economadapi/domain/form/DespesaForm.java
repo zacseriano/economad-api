@@ -20,12 +20,13 @@ import zacseriano.economadapi.shared.validator.data.StringAsLocalDateValid;
 public class DespesaForm {
 	@NotBlank
 	private String descricao;
-	@Min(value = 0)
+	
 	private BigDecimal valor;
 	@StringAsLocalDateValid
 	private String data;	
 	@StringAsLocalDateValid
 	private String prazo;
+	private String parcela;
 	private StatusDespesaEnum statusDespesaEnum;
 	@NotNull
 	private CompetenciaForm competenciaForm;

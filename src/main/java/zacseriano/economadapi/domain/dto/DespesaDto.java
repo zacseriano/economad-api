@@ -18,6 +18,7 @@ public class DespesaDto {
 	private BigDecimal valor;
 	private LocalDate data;	
 	private LocalDate prazo;
+	private String parcela;
 	private StatusDespesaEnum statusDespesaEnum;
 	private String origem;
 	private String pagador;

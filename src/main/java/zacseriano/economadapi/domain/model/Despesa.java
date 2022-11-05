@@ -25,6 +25,7 @@ public class Despesa extends BaseModel {
 	private BigDecimal valor;
 	private LocalDate data;	
 	private LocalDate prazo;
+	private String parcela;
 	@Enumerated(EnumType.STRING)
 	private StatusDespesaEnum statusDespesaEnum;
 	@ManyToOne(cascade = CascadeType.ALL)
