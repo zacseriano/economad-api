@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
+import javax.validation.ValidationException;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,8 +23,10 @@ import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
 import zacseriano.economadapi.domain.enums.MesEnum;
+import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
+import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Competencia;
 import zacseriano.economadapi.domain.model.Despesa;
@@ -114,6 +118,41 @@ public class DespesaService {
 		return despesa;
 	}
 	
+	public Despesa editar(@Valid EditarDespesaForm editarDespesaForm) {
+		Despesa despesa = despesaRepository.findById(editarDespesaForm.getId()).orElseThrow(() -> new ValidationException("Despesa não encontrada com o Id informado."));
+		BeanUtils.copyProperties(editarDespesaForm, despesa);
+		
+		return despesaRepository.save(despesa);
+	}
+	
+	public BigDecimal visualizarTotal(String nomePagador, String descricaoCompetencia) {
+		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
+		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
+		List<Despesa> despesas = despesaRepository.findByPagadorAndCompetencia(pagador, competencia);
+		BigDecimal total = BigDecimal.ZERO;
+		
+		for(Despesa despesa : despesas) {
+			total = total.add(despesa.getValor());
+		}
+		
+		return total;
+	}
+	
+	public Page<Despesa> pagarDespesas(String descricaoCompetencia, String nomePagador, String tipoPagamentoPagador,
+			String nomeOrigem, Pageable paginacao) {
+		
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
+				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem);
+		Page<Despesa> despesas = despesaRepository.findAll(spec, paginacao);
+		
+		for(Despesa despesa : despesas) {
+			despesa.setStatusDespesaEnum(StatusDespesaEnum.PAGO);
+			despesa = despesaRepository.save(despesa);
+		}	
+		
+		return despesas;
+	}	
+	
 	//SÓ FUNCIONA PARA ATÉ 9 PARCELAS, IMPLEMENTAR ALGO MAIS COMPLETO DEPOIS
 	private String criarProximaParcela(String parcela) {
 		
@@ -173,20 +212,6 @@ public class DespesaService {
 		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);
 		
 		return proximaCompetencia;
-	}
-
-	public BigDecimal visualizarTotal(String nomePagador, String descricaoCompetencia) {
-		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
-		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
-		List<Despesa> despesas = despesaRepository.findByPagadorAndCompetencia(pagador, competencia);
-		BigDecimal total = BigDecimal.ZERO;
-		
-		for(Despesa despesa : despesas) {
-			total = total.add(despesa.getValor());
-		}
-		
-		return total;
-	}
-
+	}	
 	
 }
