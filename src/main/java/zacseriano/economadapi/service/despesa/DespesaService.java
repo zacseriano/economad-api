@@ -55,16 +55,16 @@ public class DespesaService {
 	private PagadorService pagadorService;
 	
 	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador,
-			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao) {
+			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
 		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem);
+				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
 		return despesaRepository.findAll(spec, paginacao);
 	}
 	
 	public List<EstatisticasDto> listarEstatisticas(String descricaoCompetencia, String nomePagador,
-			String tipoPagamentoPagador, String nomeOrigem) {
+			String tipoPagamentoPagador, String nomeOrigem, StatusDespesaEnum statusDespesaEnum) {
 		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem);
+				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
 		List<Despesa> despesas = despesaRepository.findAll(spec);
 		Map<String, BigDecimal> totalPorPagador = new HashMap<>();
 		BigDecimal total = BigDecimal.ZERO;
@@ -138,11 +138,11 @@ public class DespesaService {
 		return total;
 	}
 	
-	public Page<Despesa> pagarDespesas(String descricaoCompetencia, String nomePagador, String tipoPagamentoPagador,
-			String nomeOrigem, Pageable paginacao) {
+	public Page<Despesa> pagarDespesas(String descricaoCompetencia, String nomePagador,
+			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
 		
 		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem);
+				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
 		Page<Despesa> despesas = despesaRepository.findAll(spec, paginacao);
 		
 		for(Despesa despesa : despesas) {

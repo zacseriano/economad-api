@@ -8,6 +8,7 @@ import javax.persistence.criteria.Root;
 
 import org.springframework.data.jpa.domain.Specification;
 
+import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.model.Competencia;
 import zacseriano.economadapi.domain.model.Despesa;
 import zacseriano.economadapi.domain.model.Origem;
@@ -38,5 +39,8 @@ public class DespesaSpecification extends GenericSpecification<Despesa> {
             return builder.equal(reembolsoJoin.get("nome"), nomeOrigem);
         };
 	}
+	public static Specification<Despesa> statusDespesa(StatusDespesaEnum statusDespesaEnum) {
+        return createSpecification(criarFiltro(QueryOperator.EQUAL, "statusDespesaEnum", statusDespesaEnum));
+    }
 
 }

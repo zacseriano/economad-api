@@ -23,7 +23,6 @@ public class DespesaForm {
 	private BigDecimal valor;
 	@StringAsLocalDateValid
 	private String data;	
-	@StringAsLocalDateValid
 	private String prazo;
 	private String parcela;
 	private StatusDespesaEnum statusDespesaEnum;

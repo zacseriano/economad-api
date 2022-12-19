@@ -23,6 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
+import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
@@ -43,10 +44,11 @@ public class DespesaController {
 			@RequestParam(required = false) String descricaoCompetencia,
 			@RequestParam(required = false) String nomePagador,
 			@RequestParam(required = false) String tipoPagamentoPagador,
-			@RequestParam(required = false) String nomeOrigem) {
+			@RequestParam(required = false) String nomeOrigem,
+			@RequestParam(required = false) StatusDespesaEnum statusDespesaEnum) {
 
 		Page<Despesa> despesas = despesaService.listar(descricaoCompetencia, nomePagador, tipoPagamentoPagador,
-				nomeOrigem, paginacao);
+				nomeOrigem, paginacao, statusDespesaEnum);
 		Page<DespesaDto> despesasDto = despesas.map(this.despesaMapper::toDto);
 
 		return ResponseEntity.ok(despesasDto);
@@ -64,9 +66,11 @@ public class DespesaController {
 			@RequestParam(required = false) String descricaoCompetencia,
 			@RequestParam(required = false) String nomePagador,
 			@RequestParam(required = false) String tipoPagamentoPagador,
-			@RequestParam(required = false) String nomeOrigem) {
+			@RequestParam(required = false) String nomeOrigem,
+			@RequestParam(required = false) StatusDespesaEnum statusDespesaEnum) {
+		
 		Page<Despesa> despesas = despesaService.pagarDespesas(descricaoCompetencia, nomePagador, tipoPagamentoPagador,
-				nomeOrigem, paginacao);
+				nomeOrigem, paginacao, statusDespesaEnum);
 		
 		Page<DespesaDto> despesasDto = despesas.map(this.despesaMapper::toDto);
 
@@ -79,10 +83,11 @@ public class DespesaController {
 			@RequestParam(required = false) String descricaoCompetencia,
 			@RequestParam(required = false) String nomePagador,
 			@RequestParam(required = false) String tipoPagamentoPagador,
-			@RequestParam(required = false) String nomeOrigem) {
+			@RequestParam(required = false) String nomeOrigem,
+			@RequestParam(required = false) StatusDespesaEnum statusDespesaEnum) {
 
 		List<EstatisticasDto> estatisticasDto = despesaService.listarEstatisticas(descricaoCompetencia, nomePagador,
-				tipoPagamentoPagador, nomeOrigem);
+				tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
 
 		return ResponseEntity.ok(estatisticasDto);
 	}
