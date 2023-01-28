@@ -28,7 +28,9 @@ import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Despesa;
+import zacseriano.economadapi.domain.model.Origem;
 import zacseriano.economadapi.service.despesa.DespesaService;
+import zacseriano.economadapi.service.origem.OrigemService;
 
 @RestController
 @RequestMapping("/despesas")
@@ -37,6 +39,8 @@ public class DespesaController {
 	private DespesaService despesaService;
 	@Autowired
 	private DespesaMapper despesaMapper;
+	@Autowired
+	private OrigemService origemService;
 
 	@GetMapping
 	public ResponseEntity<Page<DespesaDto>> listar(
@@ -98,7 +102,14 @@ public class DespesaController {
 
 		return ResponseEntity.ok(total);
 	}
-
+	
+	@GetMapping("/listaOrigem")
+	public ResponseEntity<List<String>> listarOrigens(){
+		List<Origem> origens = origemService.listarTodos();
+		List<String> nomes = origens.stream().map(r -> r.getNome()).toList();
+		
+		return ResponseEntity.ok(nomes);
+	}
 	@PostMapping
 	public ResponseEntity<DespesaDto> criar(@RequestBody @Valid DespesaForm form, UriComponentsBuilder uriBuilder) {
 		Despesa despesa = despesaService.criar(form);

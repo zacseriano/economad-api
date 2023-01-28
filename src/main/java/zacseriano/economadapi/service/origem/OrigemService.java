@@ -1,8 +1,12 @@
 package zacseriano.economadapi.service.origem;
 
+import java.util.List;
+
 import javax.transaction.Transactional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +25,10 @@ public class OrigemService {
 	private OrigemMapper origemMapper;
 	@Autowired
 	private OrigemValidator origemValidator;
+	
+	public List<Origem> listarTodos(){
+		return origemRepository.findAll(Sort.by(Direction.ASC, "nome"));
+	}
 	
 	public Origem criar(OrigemForm form) {
 		Origem origem = origemMapper.toModel(form);
