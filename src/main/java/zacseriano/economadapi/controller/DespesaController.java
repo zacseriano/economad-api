@@ -23,6 +23,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
+import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
@@ -84,14 +85,10 @@ public class DespesaController {
 
 	@GetMapping("/estatisticas")
 	public ResponseEntity<List<EstatisticasDto>> estatisticas(
-			@RequestParam(required = false) String descricaoCompetencia,
-			@RequestParam(required = false) String nomePagador,
-			@RequestParam(required = false) String tipoPagamentoPagador,
-			@RequestParam(required = false) String nomeOrigem,
-			@RequestParam(required = false) StatusDespesaEnum statusDespesaEnum) {
+			@RequestParam(required = true) String descricaoCompetencia,
+			@RequestParam(required = true) TipoEstatisticaEnum tipoEstatistica) {
 
-		List<EstatisticasDto> estatisticasDto = despesaService.listarEstatisticas(descricaoCompetencia, nomePagador,
-				tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
+		List<EstatisticasDto> estatisticasDto = despesaService.listarEstatisticasPorCompetencia(descricaoCompetencia, tipoEstatistica);
 
 		return ResponseEntity.ok(estatisticasDto);
 	}
