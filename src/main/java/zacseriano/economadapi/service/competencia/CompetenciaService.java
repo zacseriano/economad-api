@@ -27,6 +27,11 @@ public class CompetenciaService {
 			competencia = mapper.toModel(form);
 			competencia.setDescricao(competencia.getMesEnum().toString() + "/" + competencia.getAno());
 			competencia = repository.save(competencia);
+		} else {
+			if(form.getSalario() != null) {
+				competencia.setSalario(form.getSalario());
+				competencia = repository.saveAndFlush(competencia);
+			}
 		}
 		
 		return competencia;

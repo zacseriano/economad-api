@@ -21,10 +21,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
-import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
+import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
+import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
@@ -107,12 +109,18 @@ public class DespesaController {
 		
 		return ResponseEntity.ok(nomes);
 	}
+	
 	@PostMapping
 	public ResponseEntity<DespesaDto> criar(@RequestBody @Valid DespesaForm form, UriComponentsBuilder uriBuilder) {
 		Despesa despesa = despesaService.criar(form);
 		DespesaDto despesaDto = despesaMapper.toDto(despesa);
 
 		return ResponseEntity.created(URI.create("/" + despesaDto.getId())).body(despesaDto);
+	}
+	
+	@PostMapping("/cadastrar-salario")
+	public ResponseEntity<CompetenciaDto> cadastrarOuEditarSalario(@RequestBody @Valid CompetenciaForm form){
+		return ResponseEntity.ok(despesaService.cadastrarOuEditarSalario(form));
 	}
 
 }

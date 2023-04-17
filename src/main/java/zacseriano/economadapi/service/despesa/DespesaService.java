@@ -15,13 +15,13 @@ import javax.validation.ValidationException;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
 import zacseriano.economadapi.domain.enums.MesEnum;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
@@ -29,6 +29,7 @@ import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
+import zacseriano.economadapi.domain.mapper.CompetenciaMapper;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Competencia;
 import zacseriano.economadapi.domain.model.Despesa;
@@ -52,12 +53,11 @@ public class DespesaService {
 	@Autowired
 	private CompetenciaService competenciaService;
 	@Autowired
+	private CompetenciaMapper competenciaMapper;
+	@Autowired
 	private OrigemService origemService;
 	@Autowired
 	private PagadorService pagadorService;
-	
-	@Value("${salario}")
-    private BigDecimal salario;
 	
 	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador,
 			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
@@ -69,11 +69,16 @@ public class DespesaService {
 	public List<EstatisticasDto> listarEstatisticasPorCompetencia(String descricaoCompetencia, TipoEstatisticaEnum tipoEstatistica) {
 		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
 				descricaoCompetencia, null, null, null, null);
-		List<Despesa> despesas = despesaRepository.findAll(spec);		
+		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
+		if(competencia.getSalario() == null) {
+			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
+		}
+		
+		List<Despesa> despesas = despesaRepository.findAll(spec);	
 		
 		List<EstatisticasDto> estatisticas = new ArrayList<>();
 		
-		Map<String, BigDecimal> mapDespesasEstatisticas = criarMapDespesasEstatisticas(despesas, tipoEstatistica);
+		Map<String, BigDecimal> mapDespesasEstatisticas = criarMapDespesasEstatisticas(despesas, tipoEstatistica, competencia.getSalario());
 		
 		for(Entry<String, BigDecimal> entrada: mapDespesasEstatisticas.entrySet()) {
 			EstatisticasDto estatisticaDto = new EstatisticasDto(entrada.getKey(), entrada.getValue());
@@ -145,8 +150,14 @@ public class DespesaService {
 		return despesas;
 	}
 	
+	public CompetenciaDto cadastrarOuEditarSalario(CompetenciaForm form) {
+		Competencia competencia = competenciaService.carregarOuCriar(form);
+		
+		return competenciaMapper.toDto(competencia);
+	}
+	
 	private Map<String, BigDecimal> criarMapDespesasEstatisticas(List<Despesa> despesas,
-			TipoEstatisticaEnum tipoEstatistica) {
+			TipoEstatisticaEnum tipoEstatistica, BigDecimal salario) {
 		Map<String, BigDecimal> totalPorPagador = new HashMap<>();
 		BigDecimal total = BigDecimal.ZERO;		
 		
@@ -177,13 +188,12 @@ public class DespesaService {
 		}
 		
 		totalPorPagador.put("TOTAL", total);
-		totalPorPagador.put("Dinheiro restante", this.salario.subtract(total));
+		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
 
 		return totalPorPagador;
 
 	}
-	
-	//SÓ FUNCIONA PARA ATÉ 9 PARCELAS, IMPLEMENTAR ALGO MAIS COMPLETO DEPOIS
+
 	private String criarProximaParcela(String parcela) {
 		String[] partes = parcela.split("/");
 		int parcelaInt = Integer.parseInt(partes[0]);
@@ -238,7 +248,7 @@ public class DespesaService {
 		
 		MesEnum proximoMes = mesesMap.get(numeroProximoMes);
 		
-		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano);
+		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano, null);
 		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);
 		
 		return proximaCompetencia;

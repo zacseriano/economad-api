@@ -1,5 +1,7 @@
 package zacseriano.economadapi.domain.form;
 
+import java.math.BigDecimal;
+
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 
@@ -15,4 +17,5 @@ public class CompetenciaForm {
 	@Enumerated(EnumType.STRING)
 	private MesEnum mesEnum;
 	private int ano;
+	private BigDecimal salario;
 }

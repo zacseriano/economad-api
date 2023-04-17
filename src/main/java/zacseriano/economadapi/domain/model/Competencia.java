@@ -1,5 +1,7 @@
 package zacseriano.economadapi.domain.model;
 
+import java.math.BigDecimal;
+
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -20,4 +22,5 @@ public class Competencia extends BaseModel {
 	private MesEnum mesEnum;
 	private String descricao;
 	private int ano;
+	private BigDecimal salario;
 }
