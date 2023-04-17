@@ -189,9 +189,15 @@ public class DespesaService {
 		
 		totalPorPagador.put("TOTAL", total);
 		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
-
+		Competencia competenciaDespesas = despesas.get(0).getCompetencia();
+		BigDecimal poupanca = calcularPoupanca(competenciaDespesas);
 		return totalPorPagador;
 
+	}
+
+	private BigDecimal calcularPoupanca(Competencia competenciaDespesas) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private String criarProximaParcela(String parcela) {

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.mapper.CompetenciaMapper;
 import zacseriano.economadapi.domain.model.Competencia;
@@ -27,14 +28,21 @@ public class CompetenciaService {
 			competencia = mapper.toModel(form);
 			competencia.setDescricao(competencia.getMesEnum().toString() + "/" + competencia.getAno());
 			competencia = repository.save(competencia);
-		} else {
-			if(form.getSalario() != null) {
-				competencia.setSalario(form.getSalario());
-				competencia = repository.saveAndFlush(competencia);
-			}
 		}
 		
 		return competencia;
+	}
+	
+	public CompetenciaDto editarSalario(CompetenciaForm form) {
+		Competencia competencia = carregarOuCriar(form);
+		
+		if(form.getSalario() != null) {
+			throw new ValidationException("Favor informar o salário.");
+		}
+		
+		competencia.setSalario(form.getSalario());
+		competencia = repository.saveAndFlush(competencia);
+		return mapper.toDto(competencia);
 	}
 
 	public Competencia visualizarPorDescricao(String descricaoCompetencia) {

@@ -32,6 +32,7 @@ import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Despesa;
 import zacseriano.economadapi.domain.model.Origem;
+import zacseriano.economadapi.service.competencia.CompetenciaService;
 import zacseriano.economadapi.service.despesa.DespesaService;
 import zacseriano.economadapi.service.origem.OrigemService;
 
@@ -42,6 +43,8 @@ public class DespesaController {
 	private DespesaService despesaService;
 	@Autowired
 	private DespesaMapper despesaMapper;
+	@Autowired
+	private CompetenciaService competenciaService;
 	@Autowired
 	private OrigemService origemService;
 
@@ -120,7 +123,7 @@ public class DespesaController {
 	
 	@PostMapping("/cadastrar-salario")
 	public ResponseEntity<CompetenciaDto> cadastrarOuEditarSalario(@RequestBody @Valid CompetenciaForm form){
-		return ResponseEntity.ok(despesaService.cadastrarOuEditarSalario(form));
+		return ResponseEntity.ok(competenciaService.editarSalario(form));
 	}
 
 }
