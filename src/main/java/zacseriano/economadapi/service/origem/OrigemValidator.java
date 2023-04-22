@@ -15,12 +15,12 @@ public class OrigemValidator {
 			throw new ValidationException("Informe o nome da Origem");
 		}
 		
-		if (form.getCidade().isBlank()) {
-			throw new ValidationException("Informe a cidade da Origem");
-		}
-		
-		if (form.getEstado().isBlank()) {
-			throw new ValidationException("Informe o estado da Origem");
-		}
+//		if (form.getCidade().isBlank()) {
+//			throw new ValidationException("Informe a cidade da Origem");
+//		}
+//		
+//		if (form.getEstado().isBlank()) {
+//			throw new ValidationException("Informe o estado da Origem");
+//		}
 	}
 }

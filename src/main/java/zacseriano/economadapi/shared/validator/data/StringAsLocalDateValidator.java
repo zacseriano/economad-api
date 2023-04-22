@@ -17,8 +17,8 @@ public class StringAsLocalDateValidator implements ConstraintValidator<StringAsL
     }
 
     @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        if(!value.isBlank()) {
+    public boolean isValid(String value, ConstraintValidatorContext context) {    	
+        if(value != null && !value.isBlank()) {
             try {
                 DataUtils.stringToLocalDate(value);
             } catch (DateTimeParseException e) {

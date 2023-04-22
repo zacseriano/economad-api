@@ -28,6 +28,7 @@ import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
+import zacseriano.economadapi.domain.form.DespesaSimplificadaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.CompetenciaMapper;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
@@ -115,6 +116,31 @@ public class DespesaService {
 		return despesa;
 	}
 	
+	public Despesa criarSimplificado(DespesaSimplificadaForm form) {
+		Despesa despesa = despesaMapper.toModel(form);
+		Competencia competencia = competenciaService.visualizarPorDescricao(form.getMesAno());
+		despesa.setCompetencia(competencia);
+		Origem origem = origemService.visualizarPorNomeOuCriar(form.getNomeOrigem());
+		despesa.setOrigem(origem);
+		Pagador pagador = pagadorService.visualizarPorNome(form.getNomePagador());
+		despesa.setPagador(pagador);
+		despesa.setStatusDespesaEnum(StatusDespesaEnum.NÃO_PAGO);
+		despesa.setParcela(criarParcelaSimplificada(form.getNumeroParcelas()));
+		
+		if(form.getNumeroParcelas() > 1) {
+			criarDespesasParcelasRestantes(despesa);
+		}
+		
+		despesa = despesaRepository.save(despesa);
+		return despesa;
+	}
+	
+	private String criarParcelaSimplificada(Integer numeroParcelas) {
+		StringBuilder sb = new StringBuilder();
+	    sb.append("1/").append(numeroParcelas);
+		return sb.toString();
+	}
+
 	public Despesa editar(@Valid EditarDespesaForm editarDespesaForm) {
 		Despesa despesa = despesaRepository.findById(editarDespesaForm.getId()).orElseThrow(() -> new ValidationException("Despesa não encontrada com o Id informado."));
 		BeanUtils.copyProperties(editarDespesaForm, despesa);
@@ -187,17 +213,30 @@ public class DespesaService {
 			}
 		}
 		
-		totalPorPagador.put("TOTAL", total);
-		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
 		Competencia competenciaDespesas = despesas.get(0).getCompetencia();
 		BigDecimal poupanca = calcularPoupanca(competenciaDespesas);
+		total = total.add(new BigDecimal(1000));
+		totalPorPagador.put("TOTAL", total);
+		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
+		totalPorPagador.put("Poupança", poupanca);
+		
+		
 		return totalPorPagador;
 
 	}
 
 	private BigDecimal calcularPoupanca(Competencia competenciaDespesas) {
-		// TODO Auto-generated method stub
-		return null;
+		int mesInicial = MesEnum.MARÇO.getNumeroMes();
+		int anoInicial = 2023;
+		int mesAtual = competenciaDespesas.getMesEnum().getNumeroMes();
+		int anoAtual = competenciaDespesas.getAno();
+		
+		int multiplicadorPoupanca = Math.abs(mesAtual - mesInicial + 1);
+		multiplicadorPoupanca = multiplicadorPoupanca + ((anoAtual - anoInicial) * 12);
+		BigDecimal totalPoupanca = new BigDecimal(1000.00);
+		totalPoupanca = totalPoupanca.multiply(new BigDecimal(multiplicadorPoupanca));
+		
+		return totalPoupanca;
 	}
 
 	private String criarProximaParcela(String parcela) {
@@ -254,10 +293,10 @@ public class DespesaService {
 		
 		MesEnum proximoMes = mesesMap.get(numeroProximoMes);
 		
-		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano, null);
+		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano, new BigDecimal(5500));
 		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);
 		
 		return proximaCompetencia;
-	}	
+	}
 	
 }

@@ -36,7 +36,7 @@ public class CompetenciaService {
 	public CompetenciaDto editarSalario(CompetenciaForm form) {
 		Competencia competencia = carregarOuCriar(form);
 		
-		if(form.getSalario() != null) {
+		if(form.getSalario() == null) {
 			throw new ValidationException("Favor informar o salário.");
 		}
 		

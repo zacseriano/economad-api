@@ -3,6 +3,7 @@ package zacseriano.economadapi.service.origem;
 import java.util.List;
 
 import javax.transaction.Transactional;
+import javax.validation.ValidationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -42,6 +43,31 @@ public class OrigemService {
 		if (origem == null) {
 			origemValidator.validarForm(form);
 			origem = criar(form);			
+		}
+		
+		return origem;
+	}
+	
+	public Origem visualizarPorNome(String nome) {
+		Origem origem = origemRepository.findByNome(nome);
+		
+		if (origem == null) {
+			throw new ValidationException(String.format("Origem com nome %s não encontrada.", nome));		
+		}
+		
+		return origem;
+	}
+	
+	public Origem visualizarPorNomeOuCriar(String nome) {
+		Origem origem = origemRepository.findByNome(nome);
+		
+		if (origem == null) {
+			OrigemForm form = OrigemForm.builder()
+										.nome(nome)
+										.cidade("Teresina")
+										.estado("Piauí")
+										.build();
+			return criar(form);
 		}
 		
 		return origem;

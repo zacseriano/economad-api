@@ -28,6 +28,7 @@ import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
+import zacseriano.economadapi.domain.form.DespesaSimplificadaForm;
 import zacseriano.economadapi.domain.form.EditarDespesaForm;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Despesa;
@@ -50,7 +51,7 @@ public class DespesaController {
 
 	@GetMapping
 	public ResponseEntity<Page<DespesaDto>> listar(
-			@PageableDefault(size = 50, sort = "data", direction = Sort.Direction.DESC) Pageable paginacao,
+			@PageableDefault(size = 20, sort = "data", direction = Sort.Direction.DESC) Pageable paginacao,
 			@RequestParam(required = false) String descricaoCompetencia,
 			@RequestParam(required = false) String nomePagador,
 			@RequestParam(required = false) String tipoPagamentoPagador,
@@ -105,8 +106,8 @@ public class DespesaController {
 		return ResponseEntity.ok(total);
 	}
 	
-	@GetMapping("/listaOrigem")
-	public ResponseEntity<List<String>> listarOrigens(){
+	@GetMapping("/listar-origens")
+	public ResponseEntity<List<String>> listarOrigens() {
 		List<Origem> origens = origemService.listarTodos();
 		List<String> nomes = origens.stream().map(r -> r.getNome()).toList();
 		
@@ -121,8 +122,15 @@ public class DespesaController {
 		return ResponseEntity.created(URI.create("/" + despesaDto.getId())).body(despesaDto);
 	}
 	
+	@PostMapping("/criar-simplificado")
+	public ResponseEntity<DespesaDto> criarSimplificado(@RequestBody @Valid DespesaSimplificadaForm form, UriComponentsBuilder uriBuilder) {
+		Despesa despesa = despesaService.criarSimplificado(form);
+		DespesaDto despesaDto = despesaMapper.toDto(despesa);
+		return ResponseEntity.ok(despesaDto);
+	}
+	
 	@PostMapping("/cadastrar-salario")
-	public ResponseEntity<CompetenciaDto> cadastrarOuEditarSalario(@RequestBody @Valid CompetenciaForm form){
+	public ResponseEntity<CompetenciaDto> cadastrarOuEditarSalario(@RequestBody @Valid CompetenciaForm form) {
 		return ResponseEntity.ok(competenciaService.editarSalario(form));
 	}
 

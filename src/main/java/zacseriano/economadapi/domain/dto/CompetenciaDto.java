@@ -10,8 +10,7 @@ import zacseriano.economadapi.domain.enums.MesEnum;
 @Data
 @NoArgsConstructor
 public class CompetenciaDto {
-	private Long id;
-	private UUID uuid;
+	private UUID id;
 	private MesEnum mesEnum;
 	private String descricao;
 	private int ano;
