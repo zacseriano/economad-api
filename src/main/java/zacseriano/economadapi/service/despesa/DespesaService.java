@@ -2,12 +2,11 @@ package zacseriano.economadapi.service.despesa;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
@@ -60,33 +59,25 @@ public class DespesaService {
 	@Autowired
 	private PagadorService pagadorService;
 	
-	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador,
-			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
+	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador, String tipoPagamentoPagador, 
+			String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
+		
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, nomePagador, tipoPagamentoPagador, 
+				nomeOrigem, statusDespesaEnum);
 		return despesaRepository.findAll(spec, paginacao);
 	}
 	
 	public List<EstatisticasDto> listarEstatisticasPorCompetencia(String descricaoCompetencia, TipoEstatisticaEnum tipoEstatistica) {
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, null, null, null, null);
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, null, null, null, null);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
 		if(competencia.getSalario() == null) {
 			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
 		}
-		
-		List<Despesa> despesas = despesaRepository.findAll(spec);	
-		
-		List<EstatisticasDto> estatisticas = new ArrayList<>();
-		
+		List<Despesa> despesas = despesaRepository.findAll(spec);		
 		Map<String, BigDecimal> mapDespesasEstatisticas = criarMapDespesasEstatisticas(despesas, tipoEstatistica, competencia.getSalario());
-		
-		for(Entry<String, BigDecimal> entrada: mapDespesasEstatisticas.entrySet()) {
-			EstatisticasDto estatisticaDto = new EstatisticasDto(entrada.getKey(), entrada.getValue());
-			estatisticas.add(estatisticaDto);
-		}
-		
-		EstatisticasDto.ordenarEstatisticasPorValorDecrescente(estatisticas);
+		List<EstatisticasDto> estatisticas = mapDespesasEstatisticas.entrySet().stream()
+				.map(entry -> new EstatisticasDto(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+		estatisticas.sort((e1, e2) -> e2.getTotal().compareTo(e1.getTotal()));
 		return estatisticas;
 	}
 	
@@ -94,7 +85,6 @@ public class DespesaService {
 		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
 		List<Despesa> despesas = despesaRepository.findByPagadorAndCompetencia(pagador, competencia);
-		
 		return despesas;
 	}
 	
@@ -106,13 +96,10 @@ public class DespesaService {
 		despesa.setOrigem(origem);
 		Pagador pagador = pagadorService.carregarOuCriar(form.getPagadorForm());
 		despesa.setPagador(pagador);				
-		
 		despesa = despesaRepository.save(despesa);
-		
 		if(despesa.getParcela() != null) {
 			criarDespesasParcelasRestantes(despesa);
 		}
-		
 		return despesa;
 	}
 	
@@ -126,11 +113,9 @@ public class DespesaService {
 		despesa.setPagador(pagador);
 		despesa.setStatusDespesaEnum(StatusDespesaEnum.NÃO_PAGO);
 		despesa.setParcela(criarParcelaSimplificada(form.getNumeroParcelas()));
-		
 		if(form.getNumeroParcelas() > 1) {
 			criarDespesasParcelasRestantes(despesa);
 		}
-		
 		despesa = despesaRepository.save(despesa);
 		return despesa;
 	}
@@ -144,7 +129,6 @@ public class DespesaService {
 	public Despesa editar(@Valid EditarDespesaForm editarDespesaForm) {
 		Despesa despesa = despesaRepository.findById(editarDespesaForm.getId()).orElseThrow(() -> new ValidationException("Despesa não encontrada com o Id informado."));
 		BeanUtils.copyProperties(editarDespesaForm, despesa);
-		
 		return despesaRepository.save(despesa);
 	}
 	
@@ -152,41 +136,33 @@ public class DespesaService {
 		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
 		List<Despesa> despesas = despesaRepository.findByPagadorAndCompetencia(pagador, competencia);
-		BigDecimal total = BigDecimal.ZERO;
-		
-		for(Despesa despesa : despesas) {
-			total = total.add(despesa.getValor());
-		}
-		
+		BigDecimal total = despesas.stream().map(Despesa::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);	
 		return total;
 	}
 	
 	public Page<Despesa> pagarDespesas(String descricaoCompetencia, String nomePagador,
 			String tipoPagamentoPagador, String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
 		
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(
-				descricaoCompetencia, nomePagador, tipoPagamentoPagador, nomeOrigem, statusDespesaEnum);
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, nomePagador, tipoPagamentoPagador, 
+				nomeOrigem, statusDespesaEnum);
 		Page<Despesa> despesas = despesaRepository.findAll(spec, paginacao);
-		
-		for(Despesa despesa : despesas) {
+		despesas.forEach((despesa) -> {
 			despesa.setStatusDespesaEnum(StatusDespesaEnum.PAGO);
 			despesa = despesaRepository.save(despesa);
-		}	
-		
+		});
 		return despesas;
 	}
 	
 	public CompetenciaDto cadastrarOuEditarSalario(CompetenciaForm form) {
 		Competencia competencia = competenciaService.carregarOuCriar(form);
-		
 		return competenciaMapper.toDto(competencia);
 	}
 	
 	private Map<String, BigDecimal> criarMapDespesasEstatisticas(List<Despesa> despesas,
 			TipoEstatisticaEnum tipoEstatistica, BigDecimal salario) {
-		Map<String, BigDecimal> totalPorPagador = new HashMap<>();
-		BigDecimal total = BigDecimal.ZERO;		
 		
+		Map<String, BigDecimal> totalPorPagador = new HashMap<>();
+		BigDecimal total = BigDecimal.ZERO;
 		if (tipoEstatistica.equals(TipoEstatisticaEnum.PAGADOR)) {
 			for (Despesa despesa : despesas) {
 				String nomePagadorDespesa = despesa.getPagador().getNome();
@@ -195,7 +171,6 @@ public class DespesaService {
 				if (totalPorPagador.containsKey(nomePagadorDespesa)) {
 					valor = valor.add(totalPorPagador.get(nomePagadorDespesa));
 				}
-
 				totalPorPagador.put(nomePagadorDespesa, valor);
 			}
 		}
@@ -208,35 +183,12 @@ public class DespesaService {
 				if (totalPorPagador.containsKey(nomeOrigemDespesa)) {
 					valor = valor.add(totalPorPagador.get(nomeOrigemDespesa));
 				}
-
 				totalPorPagador.put(nomeOrigemDespesa, valor);
 			}
 		}
-		
-		Competencia competenciaDespesas = despesas.get(0).getCompetencia();
-		BigDecimal poupanca = calcularPoupanca(competenciaDespesas);
-		total = total.add(new BigDecimal(1000));
 		totalPorPagador.put("TOTAL", total);
 		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
-		totalPorPagador.put("Poupança", poupanca);
-		
-		
 		return totalPorPagador;
-
-	}
-
-	private BigDecimal calcularPoupanca(Competencia competenciaDespesas) {
-		int mesInicial = MesEnum.MARÇO.getNumeroMes();
-		int anoInicial = 2023;
-		int mesAtual = competenciaDespesas.getMesEnum().getNumeroMes();
-		int anoAtual = competenciaDespesas.getAno();
-		
-		int multiplicadorPoupanca = Math.abs(mesAtual - mesInicial + 1);
-		multiplicadorPoupanca = multiplicadorPoupanca + ((anoAtual - anoInicial) * 12);
-		BigDecimal totalPoupanca = new BigDecimal(1000.00);
-		totalPoupanca = totalPoupanca.multiply(new BigDecimal(multiplicadorPoupanca));
-		
-		return totalPoupanca;
 	}
 
 	private String criarProximaParcela(String parcela) {
@@ -245,8 +197,6 @@ public class DespesaService {
 		parcelaInt++;
 		String numeroParcela = Integer.toString(parcelaInt);
 		String novaParcela = numeroParcela + "/" + partes[1];
-
-		
 		return novaParcela;
 	}
 	
@@ -260,16 +210,12 @@ public class DespesaService {
 		for(int i = quantidade ; i > 1 ; i--) {
 			Despesa novaDespesa = new Despesa();
 			BeanUtils.copyProperties(despesaAtual, novaDespesa, "id");
-			
 			competencia = buscarOuCriarProximaCompetencia(competencia);
 			novaDespesa.setCompetencia(competencia);
-			
 			parcela = criarProximaParcela(parcela);
 			novaDespesa.setParcela(parcela);
-			
 			prazo = prazo.plusMonths(1);
-			novaDespesa.setPrazo(prazo);
-			
+			novaDespesa.setPrazo(prazo);	
 			despesaAtual = novaDespesa;
 			despesaRepository.save(novaDespesa);
 		}				
@@ -283,20 +229,14 @@ public class DespesaService {
 		for(MesEnum mes : meses) {
 			mesesMap.put(mes.getNumeroMes(), mes);
 		}
-		
 		int numeroProximoMes = mesAtual.getNumeroMes() + 1;
-		
 		if (numeroProximoMes > 12) {
 			numeroProximoMes = 1;
 			ano++;
 		}
-		
 		MesEnum proximoMes = mesesMap.get(numeroProximoMes);
-		
 		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano, new BigDecimal(5500));
-		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);
-		
+		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);	
 		return proximaCompetencia;
 	}
-	
 }

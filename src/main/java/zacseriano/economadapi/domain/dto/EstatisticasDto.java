@@ -19,15 +19,4 @@ import lombok.Setter;
 public class EstatisticasDto {
 	private String nomePagador;
 	private BigDecimal total;
-	
-	@JsonIgnore
-	public static void ordenarEstatisticasPorValorDecrescente(List<EstatisticasDto> estatisticas) {
-        Comparator<EstatisticasDto> comparator = new Comparator<EstatisticasDto>() {
-            @Override
-            public int compare(EstatisticasDto e1, EstatisticasDto e2) {
-                return e2.getTotal().compareTo(e1.getTotal());
-            }
-        };
-        Collections.sort(estatisticas, comparator);
-    }
 }
