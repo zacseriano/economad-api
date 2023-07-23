@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 
+@SuppressWarnings("unchecked")
 public class GenericSpecification<T> {
 
     static final String caractereOperadorLike = "%";
@@ -89,7 +90,7 @@ public class GenericSpecification<T> {
         };
     }
 
-    private static <T> Specification<T> greaterThan(String key, Object value) {
+	private static <T> Specification<T> greaterThan(String key, Object value) {
         return (Root<T> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
             if(value instanceof LocalDate) {
                 return builder.greaterThan(root.get(key), (LocalDate) value);
