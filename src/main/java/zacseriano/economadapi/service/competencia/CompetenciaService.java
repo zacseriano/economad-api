@@ -1,5 +1,10 @@
 package zacseriano.economadapi.service.competencia;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.TextStyle;
+import java.util.Locale;
+
 import javax.validation.ValidationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +28,10 @@ public class CompetenciaService {
 	private CompetenciaMapper mapper;
 	
 	public Competencia carregarOuCriar(CompetenciaForm form) {
-		Competencia competencia = repository.findByMesEnumAndAno(form.getMesEnum(), form.getAno());
+		Competencia competencia = repository.findByData(form.getData());
 		if (competencia == null) {
 			competencia = mapper.toModel(form);
-			competencia.setDescricao(competencia.getMesEnum().toString() + "/" + competencia.getAno());
+			competencia.setDescricao(getDescricaoData(competencia));
 			competencia = repository.save(competencia);
 		}
 		
@@ -53,5 +58,17 @@ public class CompetenciaService {
 		}
 		
 		return competencia;
+	}
+	
+	public Competencia buscarOuCriarProximaCompetencia(Competencia competencia) {
+		LocalDate proximoMes = competencia.getData().plusMonths(1);
+		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, new BigDecimal(5500));
+		Competencia proximaCompetencia = carregarOuCriar(competenciaForm);		
+		return proximaCompetencia;
+	}
+	
+	private String getDescricaoData (Competencia competencia) {
+		String mes = competencia.getData().getMonth().getDisplayName(TextStyle.FULL, Locale.getDefault());		
+		return mes + "/" + competencia.getData().getYear();
 	}
 }

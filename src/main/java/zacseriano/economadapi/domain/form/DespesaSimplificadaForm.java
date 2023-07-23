@@ -25,7 +25,6 @@ public class DespesaSimplificadaForm {
 	@StringAsLocalDateValid
 	private String prazo;
 	private Integer numeroParcelas;
-	private String mesAno;
 	private String nomeOrigem;
 	private String nomePagador;
 }

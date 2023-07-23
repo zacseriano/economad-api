@@ -3,11 +3,12 @@ package zacseriano.economadapi.service.despesa;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.transaction.Transactional;
 import javax.validation.Valid;
@@ -22,8 +23,8 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.dto.CompetenciaDto;
+import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
-import zacseriano.economadapi.domain.enums.MesEnum;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
@@ -118,19 +119,18 @@ public class DespesaService {
 	
 	public Despesa criarSimplificado(DespesaSimplificadaForm form) {
 		Despesa despesa = despesaMapper.toModel(form);
-		Competencia competencia = competenciaService.visualizarPorDescricao(form.getMesAno());
+		LocalDate competenciaDate = despesa.getPrazo().withDayOfMonth(1);
+		Competencia competencia = competenciaService.carregarOuCriar(new CompetenciaForm(competenciaDate, new BigDecimal(5500)));
 		despesa.setCompetencia(competencia);
 		Origem origem = origemService.visualizarPorNomeOuCriar(form.getNomeOrigem());
 		despesa.setOrigem(origem);
 		Pagador pagador = pagadorService.visualizarPorNome(form.getNomePagador());
 		despesa.setPagador(pagador);
-		despesa.setStatusDespesaEnum(StatusDespesaEnum.NÃO_PAGO);
-		despesa.setParcela(criarParcelaSimplificada(form.getNumeroParcelas()));
-		
+		despesa.setStatus(StatusDespesaEnum.NÃO_PAGO);
+		despesa.setParcela(criarParcelaSimplificada(form.getNumeroParcelas()));		
 		if(form.getNumeroParcelas() > 1) {
 			criarDespesasParcelasRestantes(despesa);
-		}
-		
+		}		
 		despesa = despesaRepository.save(despesa);
 		return despesa;
 	}
@@ -169,7 +169,7 @@ public class DespesaService {
 		Page<Despesa> despesas = despesaRepository.findAll(spec, paginacao);
 		
 		for(Despesa despesa : despesas) {
-			despesa.setStatusDespesaEnum(StatusDespesaEnum.PAGO);
+			despesa.setStatus(StatusDespesaEnum.PAGO);
 			despesa = despesaRepository.save(despesa);
 		}	
 		
@@ -185,7 +185,8 @@ public class DespesaService {
 	private Map<String, BigDecimal> criarMapDespesasEstatisticas(List<Despesa> despesas,
 			TipoEstatisticaEnum tipoEstatistica, BigDecimal salario) {
 		Map<String, BigDecimal> totalPorPagador = new HashMap<>();
-		BigDecimal total = BigDecimal.ZERO;		
+		BigDecimal total = BigDecimal.ZERO;	
+		Competencia competenciaAtual = despesas.get(0).getCompetencia();
 		
 		if (tipoEstatistica.equals(TipoEstatisticaEnum.PAGADOR)) {
 			for (Despesa despesa : despesas) {
@@ -213,12 +214,15 @@ public class DespesaService {
 			}
 		}
 		
-		Competencia competenciaDespesas = despesas.get(0).getCompetencia();
-		BigDecimal poupanca = calcularPoupanca(competenciaDespesas);
-		total = total.add(new BigDecimal(1000));
+		BigDecimal valorDespesasPagas = despesaRepository.sumTotalByStatusAndCompetencia(StatusDespesaEnum.PAGO, competenciaAtual.getData());
+		
+//		Competencia competenciaDespesas = despesas.get(0).getCompetencia();
+//		BigDecimal poupanca = calcularPoupanca(competenciaDespesas);
+//		total = total.add(new BigDecimal(1000));
 		totalPorPagador.put("TOTAL", total);
-		totalPorPagador.put("Dinheiro restante", salario.subtract(total));
-		totalPorPagador.put("Poupança", poupanca);
+		totalPorPagador.put("Dinheiro restante LÍQUIDO PREVISTO", salario.subtract(total));
+		totalPorPagador.put("Dinheiro restante ATUAL", salario.subtract(valorDespesasPagas == null ? BigDecimal.ZERO : valorDespesasPagas));
+//		totalPorPagador.put("Poupança", poupanca);
 		
 		
 		return totalPorPagador;
@@ -226,10 +230,10 @@ public class DespesaService {
 	}
 
 	private BigDecimal calcularPoupanca(Competencia competenciaDespesas) {
-		int mesInicial = MesEnum.MARÇO.getNumeroMes();
+		int mesInicial = 3; // MARÇO
 		int anoInicial = 2023;
-		int mesAtual = competenciaDespesas.getMesEnum().getNumeroMes();
-		int anoAtual = competenciaDespesas.getAno();
+		int mesAtual = competenciaDespesas.getData().getMonthValue();
+		int anoAtual = competenciaDespesas.getData().getYear();
 		
 		int multiplicadorPoupanca = Math.abs(mesAtual - mesInicial + 1);
 		multiplicadorPoupanca = multiplicadorPoupanca + ((anoAtual - anoInicial) * 12);
@@ -261,7 +265,7 @@ public class DespesaService {
 			Despesa novaDespesa = new Despesa();
 			BeanUtils.copyProperties(despesaAtual, novaDespesa, "id");
 			
-			competencia = buscarOuCriarProximaCompetencia(competencia);
+			competencia = competenciaService.buscarOuCriarProximaCompetencia(competencia);
 			novaDespesa.setCompetencia(competencia);
 			
 			parcela = criarProximaParcela(parcela);
@@ -274,29 +278,16 @@ public class DespesaService {
 			despesaRepository.save(novaDespesa);
 		}				
 	}
-	
-	private Competencia buscarOuCriarProximaCompetencia(Competencia competencia) {
-		MesEnum mesAtual = competencia.getMesEnum();
-		int ano = competencia.getAno();
-		List<MesEnum> meses = Arrays.asList(MesEnum.values());
-		Map<Integer, MesEnum> mesesMap = new HashMap<>();
-		for(MesEnum mes : meses) {
-			mesesMap.put(mes.getNumeroMes(), mes);
+
+	public DespesaDto pagarDespesaUnica(UUID id) {
+		Optional<Despesa> optDespesa = despesaRepository.findById(id);
+		if(optDespesa.isEmpty()) {
+			throw new ValidationException("Despesa informada não existe.");
 		}
-		
-		int numeroProximoMes = mesAtual.getNumeroMes() + 1;
-		
-		if (numeroProximoMes > 12) {
-			numeroProximoMes = 1;
-			ano++;
-		}
-		
-		MesEnum proximoMes = mesesMap.get(numeroProximoMes);
-		
-		CompetenciaForm competenciaForm = new CompetenciaForm(proximoMes, ano, new BigDecimal(5500));
-		Competencia proximaCompetencia = competenciaService.carregarOuCriar(competenciaForm);
-		
-		return proximaCompetencia;
+		Despesa despesa = optDespesa.get();
+		despesa.setStatus(StatusDespesaEnum.PAGO);
+		despesa = despesaRepository.save(despesa);
+		return despesaMapper.toDto(despesa);
 	}
 	
 }

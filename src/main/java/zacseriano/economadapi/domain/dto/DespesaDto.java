@@ -19,7 +19,7 @@ public class DespesaDto {
 	private LocalDate data;	
 	private LocalDate prazo;
 	private String parcela;
-	private StatusDespesaEnum statusDespesaEnum;
+	private StatusDespesaEnum status;
 	private String origem;
 	private String pagador;
 	private String competencia;	

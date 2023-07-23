@@ -3,6 +3,7 @@ package zacseriano.economadapi.controller;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
+import java.util.UUID;
 
 import javax.validation.Valid;
 
@@ -13,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -71,7 +73,7 @@ public class DespesaController {
 		return ResponseEntity.ok(this.despesaMapper.toDto(despesa));
 	}
 	
-	@PutMapping
+	@PutMapping("/pagar")
 	public ResponseEntity<Page<DespesaDto>> pagarDespesas(
 			@PageableDefault(size = 50, sort = "data", direction = Sort.Direction.DESC) Pageable paginacao,
 			@RequestParam(required = false) String descricaoCompetencia,
@@ -86,6 +88,11 @@ public class DespesaController {
 		Page<DespesaDto> despesasDto = despesas.map(this.despesaMapper::toDto);
 
 		return ResponseEntity.ok(despesasDto);
+	}
+	
+	@PutMapping("/pagar/{id}")
+	public ResponseEntity<DespesaDto> pagarDespesas(@PathVariable UUID id) {
+		return ResponseEntity.ok(despesaService.pagarDespesaUnica(id));
 	}
 	
 

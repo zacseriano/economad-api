@@ -1,16 +1,15 @@
 package zacseriano.economadapi.domain.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import zacseriano.economadapi.domain.enums.MesEnum;
 
 @Entity
 @Data
@@ -18,9 +17,8 @@ import zacseriano.economadapi.domain.enums.MesEnum;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class Competencia extends BaseModel {
-	@Enumerated(EnumType.STRING)
-	private MesEnum mesEnum;
+	@Column(unique = true)
+	private LocalDate data;
 	private String descricao;
-	private int ano;
 	private BigDecimal salario;
 }
