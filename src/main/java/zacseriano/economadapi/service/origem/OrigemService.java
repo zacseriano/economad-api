@@ -2,14 +2,13 @@ package zacseriano.economadapi.service.origem;
 
 import java.util.List;
 
-import javax.transaction.Transactional;
-import javax.validation.ValidationException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.form.OrigemForm;
 import zacseriano.economadapi.domain.mapper.OrigemMapper;

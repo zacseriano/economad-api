@@ -1,11 +1,10 @@
 package zacseriano.economadapi.shared.validator.data;
 
-import javax.validation.ConstraintValidator;
-import javax.validation.ConstraintValidatorContext;
-
-import zacseriano.economadapi.shared.utils.DataUtils;
-
 import java.time.format.DateTimeParseException;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+import zacseriano.economadapi.shared.utils.DataUtils;
 
 public class StringAsLocalDateValidator implements ConstraintValidator<StringAsLocalDateValid, String> {
     @SuppressWarnings("unused")

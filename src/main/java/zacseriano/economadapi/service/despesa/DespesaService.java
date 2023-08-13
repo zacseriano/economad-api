@@ -1,5 +1,7 @@
 package zacseriano.economadapi.service.despesa;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -9,10 +11,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-import javax.validation.Valid;
-import javax.validation.ValidationException;
-
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,6 +22,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.dto.DespesaDto;
@@ -82,6 +87,16 @@ public class DespesaService {
 		return estatisticas;
 	}
 	
+	public byte[] gerarPlanilhaCompetencia(String descricaoCompetencia) {
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, null, null, null, null);
+		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
+		if(competencia.getSalario() == null) {
+			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
+		}
+		List<Despesa> despesas = despesaRepository.findAll(spec);		
+		return gerarPlanilhaExcel(despesas);
+	}
+	
 	public List<Despesa> visualizar(String nomePagador, String descricaoCompetencia){
 		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
@@ -113,7 +128,8 @@ public class DespesaService {
 		despesa.setOrigem(origem);
 		Pagador pagador = pagadorService.visualizarPorNome(form.getNomePagador());
 		despesa.setPagador(pagador);
-		despesa.setStatus(StatusDespesaEnum.NÃO_PAGO);
+		StatusDespesaEnum status = form.getPago() ? StatusDespesaEnum.PAGO : StatusDespesaEnum.NÃO_PAGO;
+		despesa.setStatus(status);
 		despesa.setParcela(criarParcelaSimplificada(form.getNumeroParcelas()));		
 		if(form.getNumeroParcelas() > 1) {
 			criarDespesasParcelasRestantes(despesa);
@@ -132,6 +148,17 @@ public class DespesaService {
 		Despesa despesa = despesaRepository.findById(editarDespesaForm.getId()).orElseThrow(() -> new ValidationException("Despesa não encontrada com o Id informado."));
 		BeanUtils.copyProperties(editarDespesaForm, despesa);
 		return despesaRepository.save(despesa);
+	}
+	
+	public DespesaDto pagarDespesaUnica(UUID id) {
+		Optional<Despesa> optDespesa = despesaRepository.findById(id);
+		if(optDespesa.isEmpty()) {
+			throw new ValidationException("Despesa informada não existe.");
+		}
+		Despesa despesa = optDespesa.get();
+		despesa.setStatus(StatusDespesaEnum.PAGO);
+		despesa = despesaRepository.save(despesa);
+		return despesaMapper.toDto(despesa);
 	}
 	
 	public BigDecimal visualizarTotal(String nomePagador, String descricaoCompetencia) {
@@ -225,15 +252,37 @@ public class DespesaService {
 			despesaRepository.save(novaDespesa);
 		}				
 	}
+	
+	private byte[] gerarPlanilhaExcel(List<Despesa> despesas) {
+	    try (Workbook workbook = new XSSFWorkbook()) {
+	        Sheet sheet = workbook.createSheet("Planilha1");
 
-	public DespesaDto pagarDespesaUnica(UUID id) {
-		Optional<Despesa> optDespesa = despesaRepository.findById(id);
-		if(optDespesa.isEmpty()) {
-			throw new ValidationException("Despesa informada não existe.");
-		}
-		Despesa despesa = optDespesa.get();
-		despesa.setStatus(StatusDespesaEnum.PAGO);
-		despesa = despesaRepository.save(despesa);
-		return despesaMapper.toDto(despesa);
+	        Row headerRow = sheet.createRow(0);
+	        headerRow.createCell(0).setCellValue("Origem");
+	        headerRow.createCell(1).setCellValue("Valor");
+	        headerRow.createCell(2).setCellValue("Data");
+	        headerRow.createCell(3).setCellValue("Status");
+	        headerRow.createCell(4).setCellValue("Descrição");
+
+	        int rowIndex = 1;
+	        for (Despesa despesa : despesas) {
+	            Row dataRow = sheet.createRow(rowIndex);
+	            dataRow.createCell(0).setCellValue(despesa.getOrigem().getNome());
+	            dataRow.createCell(1).setCellValue(Double.parseDouble(despesa.getValor().toString())); // Converter para double
+	            dataRow.createCell(2).setCellValue(despesa.getData().toString());
+	            dataRow.createCell(3).setCellValue(despesa.getStatus().toString());
+	            dataRow.createCell(4).setCellValue(despesa.getDescricao());
+	            rowIndex++;
+	        }
+
+	        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        return null;
+	    }
 	}
+
 }

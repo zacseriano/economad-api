@@ -2,9 +2,8 @@ package zacseriano.economadapi.domain.form;
 
 import java.math.BigDecimal;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,8 +16,7 @@ import zacseriano.economadapi.shared.validator.data.StringAsLocalDateValid;
 @NoArgsConstructor
 public class DespesaForm {
 	@NotBlank
-	private String descricao;
-	
+	private String descricao;	
 	private BigDecimal valor;
 	@StringAsLocalDateValid
 	private String data;	

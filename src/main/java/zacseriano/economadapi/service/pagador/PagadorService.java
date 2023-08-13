@@ -1,11 +1,10 @@
 package zacseriano.economadapi.service.pagador;
 
-import javax.transaction.Transactional;
-import javax.validation.ValidationException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.form.PagadorForm;
 import zacseriano.economadapi.domain.mapper.PagadorMapper;

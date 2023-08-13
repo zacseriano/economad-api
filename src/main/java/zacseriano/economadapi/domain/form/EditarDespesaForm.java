@@ -3,8 +3,7 @@ package zacseriano.economadapi.domain.form;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-import javax.validation.constraints.NotNull;
-
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

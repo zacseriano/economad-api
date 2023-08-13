@@ -1,11 +1,10 @@
 package zacseriano.economadapi.controller;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.util.List;
 import java.util.UUID;
-
-import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -13,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import jakarta.validation.Valid;
 import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
@@ -105,6 +107,20 @@ public class DespesaController {
 
 		return ResponseEntity.ok(estatisticasDto);
 	}
+	
+	@GetMapping("/gerar-planilha-mensal")
+	public ResponseEntity<byte[]> gerarPlanilhaMensal(@RequestParam(required = true) String descricaoCompetencia) throws IOException {
+        byte[] planilhaBytes = despesaService.gerarPlanilhaCompetencia(descricaoCompetencia);
+        // Configurar os cabeçalhos da resposta HTTP
+        HttpHeaders headers = new HttpHeaders();
+        String competenciaSemBarra = descricaoCompetencia.replaceAll("/", "");
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", "planilha_mensal_" + competenciaSemBarra + ".xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(planilhaBytes);
+    }
 
 	@GetMapping("/total")
 	public ResponseEntity<BigDecimal> visualizarTotal(@RequestParam String pagador, @RequestParam String competencia) {

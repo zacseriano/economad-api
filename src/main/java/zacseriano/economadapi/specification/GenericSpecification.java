@@ -1,14 +1,15 @@
 package zacseriano.economadapi.specification;
 
-import org.springframework.data.jpa.domain.Specification;
-
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+
+import org.springframework.data.jpa.domain.Specification;
+
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Root;
 
 @SuppressWarnings("unchecked")
 public class GenericSpecification<T> {

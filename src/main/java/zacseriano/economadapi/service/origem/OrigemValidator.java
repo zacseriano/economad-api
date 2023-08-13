@@ -1,9 +1,8 @@
 package zacseriano.economadapi.service.origem;
 
-import javax.validation.ValidationException;
-
 import org.springframework.stereotype.Component;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.form.OrigemForm;
 

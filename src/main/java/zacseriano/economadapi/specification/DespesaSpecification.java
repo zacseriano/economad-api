@@ -1,13 +1,12 @@
 package zacseriano.economadapi.specification;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Join;
-import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Root;
-
 import org.springframework.data.jpa.domain.Specification;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Root;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.model.Competencia;
 import zacseriano.economadapi.domain.model.Despesa;

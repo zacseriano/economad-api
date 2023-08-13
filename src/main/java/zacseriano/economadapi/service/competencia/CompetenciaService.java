@@ -5,12 +5,11 @@ import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.Locale;
 
-import javax.validation.ValidationException;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import zacseriano.economadapi.domain.dto.CompetenciaDto;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
