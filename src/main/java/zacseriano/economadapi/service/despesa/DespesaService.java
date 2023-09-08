@@ -3,12 +3,12 @@ package zacseriano.economadapi.service.despesa;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Row;
@@ -23,19 +23,14 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
-import zacseriano.economadapi.domain.dto.CompetenciaDto;
-import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
 import zacseriano.economadapi.domain.form.CompetenciaForm;
 import zacseriano.economadapi.domain.form.DespesaForm;
 import zacseriano.economadapi.domain.form.DespesaSimplificadaForm;
-import zacseriano.economadapi.domain.form.EditarDespesaForm;
-import zacseriano.economadapi.domain.mapper.CompetenciaMapper;
 import zacseriano.economadapi.domain.mapper.DespesaMapper;
 import zacseriano.economadapi.domain.model.Competencia;
 import zacseriano.economadapi.domain.model.Despesa;
@@ -45,7 +40,8 @@ import zacseriano.economadapi.repository.DespesaRepository;
 import zacseriano.economadapi.service.competencia.CompetenciaService;
 import zacseriano.economadapi.service.origem.OrigemService;
 import zacseriano.economadapi.service.pagador.PagadorService;
-import zacseriano.economadapi.specification.DespesaSpecificationBuilder;
+import zacseriano.economadapi.specification.builder.DespesaSpecificationBuilder;
+import zacseriano.economadapi.specification.filter.DespesaFilter;
 
 @Service
 @Transactional
@@ -59,22 +55,18 @@ public class DespesaService {
 	@Autowired
 	private CompetenciaService competenciaService;
 	@Autowired
-	private CompetenciaMapper competenciaMapper;
-	@Autowired
 	private OrigemService origemService;
 	@Autowired
 	private PagadorService pagadorService;
 	
-	public Page<Despesa> listar(String descricaoCompetencia, String nomePagador, String tipoPagamentoPagador, 
-			String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
-		
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, nomePagador, tipoPagamentoPagador, 
-				nomeOrigem, statusDespesaEnum);
+	public Page<Despesa> listar(DespesaFilter filter, Pageable paginacao) {		
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(filter);
 		return despesaRepository.findAll(spec, paginacao);
 	}
 	
 	public List<EstatisticasDto> listarEstatisticasPorCompetencia(String descricaoCompetencia, TipoEstatisticaEnum tipoEstatistica) {
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, null, null, null, null);
+		DespesaFilter filtro = DespesaFilter.builder().descricaoCompetencia(descricaoCompetencia).build();
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(filtro);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
 		if(competencia.getSalario() == null) {
 			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
@@ -88,7 +80,8 @@ public class DespesaService {
 	}
 	
 	public byte[] gerarPlanilhaCompetencia(String descricaoCompetencia) {
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, null, null, null, null);
+		DespesaFilter filtro = DespesaFilter.builder().descricaoCompetencia(descricaoCompetencia).build();
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(filtro);
 		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
 		if(competencia.getSalario() == null) {
 			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
@@ -138,55 +131,25 @@ public class DespesaService {
 		return despesa;
 	}
 	
+	public BigDecimal calcularIndiceDiarioRelativo(LocalDate dataInicio, LocalDate dataFim) {
+		DespesaFilter filtro = DespesaFilter.builder().dataInicio(dataInicio).dataFim(dataFim).build();
+		BigDecimal indice = BigDecimal.ZERO;
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(filtro);
+		List<Despesa> despesas = despesaRepository.findAll(spec);
+		if(!despesas.isEmpty()) {
+			BigDecimal numeroDias = new BigDecimal(ChronoUnit.DAYS.between(dataInicio, dataFim));
+			BigDecimal totalValor = despesas.stream().map(Despesa::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);
+			indice = totalValor.divide(numeroDias, 2, RoundingMode.CEILING);
+		}		
+		return indice;
+	}
+	
 	private String criarParcelaSimplificada(Integer numeroParcelas) {
 		StringBuilder sb = new StringBuilder();
 	    sb.append("1/").append(numeroParcelas);
 		return sb.toString();
 	}
 
-	public Despesa editar(@Valid EditarDespesaForm editarDespesaForm) {
-		Despesa despesa = despesaRepository.findById(editarDespesaForm.getId()).orElseThrow(() -> new ValidationException("Despesa não encontrada com o Id informado."));
-		BeanUtils.copyProperties(editarDespesaForm, despesa);
-		return despesaRepository.save(despesa);
-	}
-	
-	public DespesaDto pagarDespesaUnica(UUID id) {
-		Optional<Despesa> optDespesa = despesaRepository.findById(id);
-		if(optDespesa.isEmpty()) {
-			throw new ValidationException("Despesa informada não existe.");
-		}
-		Despesa despesa = optDespesa.get();
-		despesa.setStatus(StatusDespesaEnum.PAGO);
-		despesa = despesaRepository.save(despesa);
-		return despesaMapper.toDto(despesa);
-	}
-	
-	public BigDecimal visualizarTotal(String nomePagador, String descricaoCompetencia) {
-		Pagador pagador = pagadorService.visualizarPorNome(nomePagador);
-		Competencia competencia = competenciaService.visualizarPorDescricao(descricaoCompetencia);
-		List<Despesa> despesas = despesaRepository.findByPagadorAndCompetencia(pagador, competencia);
-		BigDecimal total = despesas.stream().map(Despesa::getValor).reduce(BigDecimal.ZERO, BigDecimal::add);	
-		return total;
-	}
-	
-	public Page<Despesa> pagarDespesas(String descricaoCompetencia, String nomePagador,	String tipoPagamentoPagador, 
-			String nomeOrigem, Pageable paginacao, StatusDespesaEnum statusDespesaEnum) {
-		
-		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(descricaoCompetencia, nomePagador, tipoPagamentoPagador, 
-				nomeOrigem, statusDespesaEnum);
-		Page<Despesa> despesas = despesaRepository.findAll(spec, paginacao);
-		despesas.forEach((despesa) -> {
-			despesa.setStatus(StatusDespesaEnum.PAGO);
-			despesa = despesaRepository.save(despesa);
-		});
-		return despesas;
-	}
-	
-	public CompetenciaDto cadastrarOuEditarSalario(CompetenciaForm form) {
-		Competencia competencia = competenciaService.carregarOuCriar(form);
-		return competenciaMapper.toDto(competencia);
-	}
-	
 	private Map<String, BigDecimal> criarMapDespesasEstatisticas(List<Despesa> despesas, TipoEstatisticaEnum tipoEstatistica, 
 			BigDecimal salario) {
 		

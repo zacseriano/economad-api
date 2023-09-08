@@ -1,4 +1,4 @@
-package zacseriano.economadapi.specification;
+package zacseriano.economadapi.specification.common;
 
 import java.time.LocalDate;
 import java.util.Collection;

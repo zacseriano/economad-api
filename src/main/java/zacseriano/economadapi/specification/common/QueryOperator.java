@@ -1,4 +1,4 @@
-package zacseriano.economadapi.specification;
+package zacseriano.economadapi.specification.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
