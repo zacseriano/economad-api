@@ -5,7 +5,11 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,7 @@ import zacseriano.economadapi.service.origem.OrigemService;
 import zacseriano.economadapi.service.pagador.PagadorService;
 import zacseriano.economadapi.specification.builder.DespesaSpecificationBuilder;
 import zacseriano.economadapi.specification.filter.DespesaFilter;
+
 
 @Service
 @Transactional
@@ -87,7 +92,7 @@ public class DespesaService {
 			throw new ValidationException(String.format("Favor, cadastrar o salário da Competência: %s", descricaoCompetencia));
 		}
 		List<Despesa> despesas = despesaRepository.findAll(spec);		
-		return gerarPlanilhaExcel(despesas);
+		return generateWorksheet(despesas);
 	}
 	
 	public List<Despesa> visualizar(String nomePagador, String descricaoCompetencia){
@@ -247,5 +252,107 @@ public class DespesaService {
 	        return null;
 	    }
 	}
+	
+	private byte[] generateWorksheet(List<Despesa> expenses) {
+	    try (Workbook workbook = new XSSFWorkbook()) {
+	        Sheet sheet = workbook.createSheet("Worksheet");
+	        Integer cellIndex = Integer.valueOf(0);
+	        Row headerRow = sheet.createRow(0);
+	        headerRow.createCell(cellIndex++).setCellValue("Date");
+	        headerRow.createCell(cellIndex++).setCellValue("Origin");
+	        headerRow.createCell(cellIndex++).setCellValue("Description");
+	        headerRow.createCell(cellIndex++).setCellValue("Value");
+	        headerRow.createCell(cellIndex++).setCellValue("Payment Type");
+	        headerRow.createCell(cellIndex++).setCellValue("Deadline");
+	        headerRow.createCell(cellIndex++).setCellValue("Installment");
+	        headerRow.createCell(cellIndex++).setCellValue("Installments Number");
+	        headerRow.createCell(cellIndex++).setCellValue("Payment Types");
+	        headerRow.createCell(cellIndex++).setCellValue("Type");
+	        headerRow.createCell(cellIndex++).setCellValue("Billing Date");
+	        headerRow.createCell(cellIndex++).setCellValue("Salary");
+	        List<Pagador> payments = pagadorService.listarTodos();
+	        Integer rowsNumber = payments.size() > expenses.size() ? payments.size() : expenses.size();
+	        createRows(rowsNumber, sheet);
+	        insertExpensesData(expenses, sheet);
+	        insertPaymentTypesData(payments, sheet);
+	        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+	            workbook.write(outputStream);
+	            return outputStream.toByteArray();
+	        }
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
+	private void createRows(Integer rowsNumber, Sheet sheet) {
+		for (int i = 1; i <= rowsNumber; i++) {
+            sheet.createRow(i);
+        }		
+	}
+
+	private void insertPaymentTypesData(List<Pagador> paymentTypes, Sheet sheet) {
+		int rowIndex = 1;
+		int cellIndex = 8;
+		for(Pagador paymentType : paymentTypes) {
+			cellIndex = 8;
+            Row dataRow = sheet.getRow(rowIndex);
+			dataRow.createCell(cellIndex++).setCellValue(paymentType.getNome());
+        	dataRow.createCell(cellIndex++).setCellValue(paymentType.getTipoPagamentoEnum().getDescricao());
+        	dataRow.createCell(cellIndex++).setCellValue(gerarDiaFatura(paymentType.getNome()));
+        	if(rowIndex == 1) {
+        		dataRow.createCell(cellIndex).setCellValue(5500);
+        	}
+        	rowIndex++;
+		}		
+	}
+
+	private Integer gerarDiaFatura(String nome) {
+		switch(nome) {
+		case "Nubank":
+			return 27;
+		case "Inter":
+			return 20;
+		case "BB":
+			return 0;
+		case "PicPay":
+			return 10;
+		default:
+			return 0;
+		}
+	}
+
+	private void insertExpensesData(List<Despesa> expenses, Sheet sheet) {
+		int rowIndex = 1;
+		Integer cellIndex;
+        for (Despesa expense : expenses) {
+        	cellIndex = 0;
+            Row dataRow = sheet.getRow(rowIndex);
+            dataRow.createCell(cellIndex++).setCellValue(expense.getData().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            dataRow.createCell(cellIndex++).setCellValue(expense.getOrigem().getNome());
+            dataRow.createCell(cellIndex++).setCellValue(expense.getDescricao());
+            dataRow.createCell(cellIndex++).setCellValue(Double.parseDouble(expense.getValor().toString()));
+            dataRow.createCell(cellIndex++).setCellValue(expense.getPagador().getNome());
+            dataRow.createCell(cellIndex++).setCellValue(expense.getPrazo().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            List<Integer> numerosParcelas = obterNumeros(expense.getParcela());
+            dataRow.createCell(cellIndex++).setCellValue(numerosParcelas.get(0));
+            dataRow.createCell(cellIndex++).setCellValue(numerosParcelas.get(1));
+            rowIndex++;
+        }		
+	}
+	
+	public static List<Integer> obterNumeros(String input) {
+		if(input == null) {
+			return Arrays.asList(1,1);
+		}
+        String[] partes = input.split("/");
+        List<Integer> numeros = new ArrayList<>();
+
+        // Converte as partes para inteiros e adiciona à lista
+        numeros.add(Integer.parseInt(partes[0]));
+        numeros.add(Integer.parseInt(partes[1]));
+
+        return numeros;
+    }
 
 }

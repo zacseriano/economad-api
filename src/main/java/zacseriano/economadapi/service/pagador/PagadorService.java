@@ -1,5 +1,7 @@
 package zacseriano.economadapi.service.pagador;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,10 @@ public class PagadorService {
 		pagador = pagadorRepository.save(pagador);
 		
 		return pagador;
+	}
+	
+	public List<Pagador> listarTodos() {	
+		return pagadorRepository.findAll();
 	}
 	
 	public Pagador carregarOuCriar(PagadorForm form) {

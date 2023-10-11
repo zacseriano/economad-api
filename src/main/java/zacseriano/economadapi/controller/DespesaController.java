@@ -65,12 +65,12 @@ public class DespesaController {
 	}
 	
 	@GetMapping("/gerar-planilha-mensal")
-	public ResponseEntity<byte[]> gerarPlanilhaMensal(@RequestParam(required = true) String descricaoCompetencia) throws IOException {
+	public ResponseEntity<byte[]> gerarPlanilhaMensal(@RequestParam(required = false) String descricaoCompetencia) throws IOException {
         byte[] planilhaBytes = despesaService.gerarPlanilhaCompetencia(descricaoCompetencia);
         HttpHeaders headers = new HttpHeaders();
-        String competenciaSemBarra = descricaoCompetencia.replaceAll("/", "");
+//        String competenciaSemBarra = descricaoCompetencia.replaceAll("/", "");
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", "planilha_mensal_" + competenciaSemBarra + ".xlsx");
+        headers.setContentDispositionFormData("attachment", "planilha_mensal_" + ".xlsx");
 
         return ResponseEntity.ok()
                 .headers(headers)
