@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import jakarta.validation.Valid;
+import zacseriano.economadapi.domain.dto.ConsumoDiarioDto;
 import zacseriano.economadapi.domain.dto.DespesaDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
@@ -90,6 +91,11 @@ public class DespesaController {
 		Despesa despesa = despesaService.criarSimplificado(form);
 		DespesaDto despesaDto = despesaMapper.toDto(despesa);
 		return ResponseEntity.ok(despesaDto);
+	}
+	
+	@GetMapping("/consumo-diario")
+	public ResponseEntity<List<ConsumoDiarioDto>> gerarConsumoDiario(@RequestParam(required = true) LocalDate dataInicio, @RequestParam(required = false) LocalDate dataFim) {
+		return ResponseEntity.ok(despesaService.gerarConsumoDiario(dataInicio, dataFim));
 	}
 	
 	@GetMapping("/calcular-idr")

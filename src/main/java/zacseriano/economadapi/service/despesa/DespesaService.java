@@ -9,10 +9,12 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Row;
@@ -29,6 +31,7 @@ import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import zacseriano.economadapi.domain.dto.ConsumoDiarioDto;
 import zacseriano.economadapi.domain.dto.EstatisticasDto;
 import zacseriano.economadapi.domain.enums.StatusDespesaEnum;
 import zacseriano.economadapi.domain.enums.TipoEstatisticaEnum;
@@ -184,10 +187,10 @@ public class DespesaService {
 				totalPorPagador.put(nomeOrigemDespesa, valor);
 			}
 		}		
-		BigDecimal valorDespesasPagas = despesaRepository.sumTotalByStatusAndCompetencia(StatusDespesaEnum.PAGO, competenciaAtual.getData());		
+//		BigDecimal valorDespesasPagas = despesaRepository.sumTotalByStatusAndCompetencia(StatusDespesaEnum.PAGO, competenciaAtual.getData());		
 		totalPorPagador.put("TOTAL", total);
 		totalPorPagador.put("Dinheiro restante LÍQUIDO PREVISTO", salario.subtract(total));
-		totalPorPagador.put("Dinheiro restante ATUAL", salario.subtract(valorDespesasPagas == null ? BigDecimal.ZERO : valorDespesasPagas));		
+//		totalPorPagador.put("Dinheiro restante ATUAL", salario.subtract(valorDespesasPagas == null ? BigDecimal.ZERO : valorDespesasPagas));		
 		return totalPorPagador;
 	}
 
@@ -354,5 +357,32 @@ public class DespesaService {
 
         return numeros;
     }
+
+	public List<ConsumoDiarioDto> gerarConsumoDiario(LocalDate dataInicio, LocalDate dataFim) {
+		if(dataFim == null) {
+			dataFim = LocalDate.now();
+		}		
+		DespesaFilter filter = DespesaFilter.builder().dataInicio(dataInicio).dataFim(dataFim).build();
+		Specification<Despesa> spec = DespesaSpecificationBuilder.builder(filter);
+		List<Despesa> despesas = despesaRepository.findAll(spec);
+		Map<LocalDate, BigDecimal> mapDiaTotal = new HashMap<>();
+		for(Despesa despesa : despesas) {
+			BigDecimal total = BigDecimal.ZERO;
+			if(mapDiaTotal.containsKey(despesa.getData())) {
+				total = mapDiaTotal.get(despesa.getData());				
+			}
+			total = total.add(despesa.getValor());
+			mapDiaTotal.put(despesa.getData(), total);
+		}
+		List<ConsumoDiarioDto> consumos = new ArrayList<>();
+		for(Entry<LocalDate,BigDecimal> entry : mapDiaTotal.entrySet()) {
+			ConsumoDiarioDto consumo = ConsumoDiarioDto.builder().dia(entry.getKey())
+					.total(entry.getValue()).build();
+			consumos.add(consumo);
+		}
+		Comparator<ConsumoDiarioDto> comparadorPorDia = Comparator.comparing(ConsumoDiarioDto::getDia);
+        Collections.sort(consumos, comparadorPorDia);
+		return consumos;
+	}
 
 }
